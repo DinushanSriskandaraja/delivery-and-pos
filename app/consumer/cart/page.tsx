@@ -260,7 +260,7 @@ export default function CartPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-emerald-50">
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-emerald-50 pb-32 lg:pb-8">
             <Header user={user} />
 
             <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -277,46 +277,50 @@ export default function CartPage() {
                             <CardContent>
                                 <div className="space-y-4">
                                     {cart.map((item) => (
-                                        <div key={item.shop_product_id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                                            <div className="flex-1">
+                                        <div key={item.shop_product_id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                                            <div className="flex-1 w-full sm:w-auto">
                                                 <h3 className="font-medium text-gray-900">{item.product.global_product.name}</h3>
-                                                <p className="text-sm text-gray-600">{item.product.global_product.description}</p>
+                                                <p className="text-sm text-gray-600 line-clamp-2 sm:line-clamp-none">{item.product.global_product.description}</p>
                                                 <p className="text-sm text-gray-500 mt-1">
                                                     {formatPrice(item.product.price)} per {item.product.global_product.base_unit}
                                                 </p>
                                             </div>
 
-                                            <div className="flex items-center gap-2">
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => updateQuantity(item.shop_product_id, item.quantity - 1)}
-                                                >
-                                                    −
-                                                </Button>
-                                                <span className="w-12 text-center font-medium">{item.quantity}</span>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => updateQuantity(item.shop_product_id, item.quantity + 1)}
-                                                    disabled={item.quantity >= item.product.stock_quantity}
-                                                >
-                                                    +
-                                                </Button>
-                                            </div>
+                                            <div className="flex items-center justify-between w-full sm:w-auto mt-2 sm:mt-0 gap-4">
+                                                <div className="flex items-center gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => updateQuantity(item.shop_product_id, item.quantity - 1)}
+                                                        className="h-8 w-8 p-0 flex items-center justify-center"
+                                                    >
+                                                        −
+                                                    </Button>
+                                                    <span className="w-8 text-center font-medium">{item.quantity}</span>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => updateQuantity(item.shop_product_id, item.quantity + 1)}
+                                                        disabled={item.quantity >= item.product.stock_quantity}
+                                                        className="h-8 w-8 p-0 flex items-center justify-center"
+                                                    >
+                                                        +
+                                                    </Button>
+                                                </div>
 
-                                            <div className="text-right">
-                                                <p className="font-semibold text-gray-900">
-                                                    {formatPrice(item.product.price * item.quantity)}
-                                                </p>
-                                                <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    onClick={() => removeFromCart(item.shop_product_id)}
-                                                    className="text-red-600 hover:text-red-700 mt-1"
-                                                >
-                                                    Remove
-                                                </Button>
+                                                <div className="text-right sm:min-w-[100px]">
+                                                    <p className="font-semibold text-gray-900">
+                                                        {formatPrice(item.product.price * item.quantity)}
+                                                    </p>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => removeFromCart(item.shop_product_id)}
+                                                        className="text-red-600 hover:text-red-700 mt-1 h-auto py-1 px-2 text-xs"
+                                                    >
+                                                        Remove
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
@@ -458,7 +462,7 @@ export default function CartPage() {
 
                                     <Button
                                         variant="primary"
-                                        className="w-full"
+                                        className="w-full hidden lg:block"
                                         onClick={handlePlaceOrder}
                                         isLoading={isSubmitting}
                                     >
@@ -470,6 +474,24 @@ export default function CartPage() {
                     </div>
                 </div>
             </main>
+
+            {/* Mobile Sticky Footer */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg lg:hidden z-50 safe-area-bottom">
+                <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+                    <div className="flex flex-col">
+                        <span className="text-sm text-gray-600">Total</span>
+                        <span className="text-lg font-bold text-emerald-600">{formatPrice(getCartTotal())}</span>
+                    </div>
+                    <Button
+                        variant="primary"
+                        className="flex-1 max-w-sm"
+                        onClick={handlePlaceOrder}
+                        isLoading={isSubmitting}
+                    >
+                        Place Order
+                    </Button>
+                </div>
+            </div>
         </div>
     )
 }
