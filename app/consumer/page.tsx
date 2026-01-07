@@ -11,19 +11,9 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import Badge from '@/components/ui/Badge'
 import { calculateDistance } from '@/lib/utils'
 import Link from 'next/link'
+import ShopCard, { Shop } from '@/components/shops/ShopCard'
 
-interface Shop {
-    id: string
-    name: string
-    description: string
-    address: string
-    latitude: number
-    longitude: number
-    delivery_range_km: number
-    distance?: number
-    rating?: number
-    review_count?: number
-}
+
 
 export default function ConsumerDashboard() {
     const router = useRouter()
@@ -34,14 +24,13 @@ export default function ConsumerDashboard() {
     const [filteredShops, setFilteredShops] = useState<Shop[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
-    const [searchRadius, setSearchRadius] = useState(5000) // Default to 5000km for debugging
     const [searchQuery, setSearchQuery] = useState('')
     const [sortBy, setSortBy] = useState<'distance' | 'rating' | 'name'>('distance')
 
     // Track Order Modal State
     const [showTrackModal, setShowTrackModal] = useState(false)
     const [trackOrderId, setTrackOrderId] = useState('')
-    const [lastOrderId, setLastOrderId] = useState<string | null>(null) // State for last order
+    const [lastOrderId, setLastOrderId] = useState<string | null>(null)
 
     const handleTrackOrder = () => {
         if (!trackOrderId.trim()) return
@@ -51,7 +40,6 @@ export default function ConsumerDashboard() {
     useEffect(() => {
         loadUserAndShops()
         getUserLocation()
-        // Check for last guest order
         const savedOrderId = localStorage.getItem('guest_last_order_id')
         if (savedOrderId) {
             setLastOrderId(savedOrderId)
@@ -60,7 +48,7 @@ export default function ConsumerDashboard() {
 
     useEffect(() => {
         filterAndSortShops()
-    }, [shops, userLocation, searchRadius, searchQuery, sortBy])
+    }, [shops, userLocation, searchQuery, sortBy])
 
     const loadUserAndShops = async () => {
         try {
@@ -74,23 +62,17 @@ export default function ConsumerDashboard() {
                     .single()
 
                 if (userData && userData.role !== 'consumer') {
-                    // Start: Redirect non-consumers to their dashboard or show error
                     router.push(`/${userData.role.replace('_', '-')}`)
                     return
                 }
                 setUser(userData)
             }
-            // If no user, stay as guest (user is null)
 
-            // Load shops
             const { data: shopsData } = await supabase
                 .from('shops')
                 .select('*')
-            // .eq('is_active', true) // Removed for debugging
-            // .eq('is_approved', true) // Removed for debugging
 
             if (shopsData) {
-                // Load ratings for each shop
                 const shopsWithRatings = await Promise.all(
                     shopsData.map(async (shop) => {
                         const { data: reviews } = await supabase
@@ -132,7 +114,6 @@ export default function ConsumerDashboard() {
                 },
                 (error) => {
                     console.error('Error getting location:', error)
-                    // Default to Colombo, Sri Lanka
                     setUserLocation({ lat: 6.9271, lng: 79.8612 })
                 },
                 {
@@ -142,7 +123,6 @@ export default function ConsumerDashboard() {
                 }
             )
         } else {
-            // Default to Colombo, Sri Lanka
             setUserLocation({ lat: 6.9271, lng: 79.8612 })
         }
     }
@@ -160,16 +140,19 @@ export default function ConsumerDashboard() {
             )
         }))
 
-        // Filter by radius AND shop's delivery range
         filtered = filtered.filter(shop => {
             const distance = shop.distance || 0
-            const deliveryRange = shop.delivery_range_km || 5 // Default to 5km if not set
+            const deliveryRange = shop.delivery_range_km
 
-            // Check if within user's search radius AND within shop's delivery range
-            return distance <= searchRadius && distance <= deliveryRange
+            // If delivery range is 0, show shop if within 5km (for pickup)
+            // Otherwise check if within delivery range
+            if (deliveryRange === 0) {
+                return distance <= 5
+            }
+
+            return distance <= (deliveryRange || 5)
         })
 
-        // Filter by search query
         if (searchQuery) {
             filtered = filtered.filter(shop =>
                 shop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -177,7 +160,6 @@ export default function ConsumerDashboard() {
             )
         }
 
-        // Sort
         filtered.sort((a, b) => {
             switch (sortBy) {
                 case 'distance':
@@ -209,58 +191,57 @@ export default function ConsumerDashboard() {
         <div className="min-h-screen bg-gray-50">
             <Header user={user} />
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">Discover Nearby Shops</h1>
-                    <p className="text-gray-600 mt-2">Find grocery shops near you and start shopping</p>
+            <div className="bg-emerald-900 text-emerald-50 py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-emerald-800 rounded-full opacity-50 blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-72 h-72 bg-emerald-950 rounded-full opacity-50 blur-3xl"></div>
+                <div className="max-w-7xl mx-auto relative z-10">
+                    <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 tracking-tight">
+                        Discover Local Flavors
+                    </h1>
+                    <p className="text-lg md:text-xl text-emerald-100 max-w-2xl">
+                        Find the best grocery shops near you, delivering fresh produce and essentials directly to your doorstep.
+                    </p>
                 </div>
+            </div>
 
-                {/* Filters */}
-                <Card className="mb-6">
-                    <CardContent className="pt-6">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <Input
-                                label="Search Shops"
-                                placeholder="Search by name..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Search Radius (km)
-                                </label>
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20 pb-12">
+                {/* Search & Filter Bar */}
+                <Card className="mb-10 shadow-lg border-0 ring-1 ring-black/5">
+                    <CardContent className="p-4 md:p-6">
+                        <div className="flex flex-col md:flex-row gap-4 items-center">
+                            <div className="flex-1 w-full md:w-auto relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span className="text-gray-400">🔍</span>
+                                </div>
                                 <input
-                                    type="range"
-                                    min="1"
-                                    max="50"
-                                    value={searchRadius}
-                                    onChange={(e) => setSearchRadius(Number(e.target.value))}
-                                    className="w-full"
+                                    type="text"
+                                    placeholder="Search shops or items..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ease-in-out sm:text-sm"
                                 />
-                                <p className="text-sm text-gray-600 mt-1">{searchRadius} km</p>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Sort By
-                                </label>
-                                <select
-                                    value={sortBy}
-                                    onChange={(e) => setSortBy(e.target.value as any)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                >
-                                    <option value="distance">Distance</option>
-                                    <option value="rating">Rating</option>
-                                    <option value="name">Name</option>
-                                </select>
-                            </div>
+                            <div className="flex gap-4 w-full md:w-auto">
+                                <div className="relative min-w-[140px]">
+                                    <select
+                                        value={sortBy}
+                                        onChange={(e) => setSortBy(e.target.value as any)}
+                                        className="block w-full pl-3 pr-10 py-3 border border-gray-200 rounded-xl leading-5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent sm:text-sm appearance-none cursor-pointer"
+                                    >
+                                        <option value="distance">Nearest First</option>
+                                        <option value="rating">Highest Rated</option>
+                                        <option value="name">Alphabetical</option>
+                                    </select>
+                                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
+                                        ▼
+                                    </div>
+                                </div>
 
-                            <div className="flex items-end">
                                 <Button
                                     variant="outline"
-                                    className="w-full"
                                     onClick={getUserLocation}
+                                    className="whitespace-nowrap py-3 px-6 rounded-xl border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-700"
                                 >
                                     📍 Update Location
                                 </Button>
@@ -269,185 +250,124 @@ export default function ConsumerDashboard() {
                     </CardContent>
                 </Card>
 
-                {/* Shop Results */}
-                <div className="mb-4 flex items-center justify-between">
-                    <p className="text-gray-600">
-                        Found {filteredShops.length} shop{filteredShops.length !== 1 ? 's' : ''} within {searchRadius}km
+                {/* Quick Stats */}
+                <div className="mb-6 flex items-center justify-between text-sm">
+                    <p className="text-gray-500 bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100">
+                        📍 Found <span className="font-semibold text-gray-900">{filteredShops.length}</span> shops nearby
                     </p>
                 </div>
 
                 {filteredShops.length === 0 ? (
-                    <Card>
-                        <CardContent className="py-12 text-center">
-                            <div className="text-6xl mb-4">🏪</div>
-                            <h3 className="text-xl font-semibold text-gray-900 mb-2">No shops found</h3>
-                            <p className="text-gray-600">Try increasing your search radius or changing your location</p>
-                        </CardContent>
-                    </Card>
+                    <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                        <div className="text-6xl mb-4 opacity-50">🏪</div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">No shops found nearby</h3>
+                        <p className="text-gray-500">We couldn't find any shops delivering to your current location.</p>
+                        <Button variant="outline" className="mt-6" onClick={getUserLocation}>
+                            Try Updating Location
+                        </Button>
+                    </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                         {filteredShops.map((shop) => (
-                            <Link key={shop.id} href={`/consumer/shops/${shop.id}`}>
-                                <Card hoverable>
-                                    <CardHeader>
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex-1">
-                                                <CardTitle>{shop.name}</CardTitle>
-                                                <CardDescription className="mt-2">{shop.description}</CardDescription>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-4 space-y-2">
-                                            <div className="flex items-center text-sm text-gray-600">
-                                                <span className="mr-2">📍</span>
-                                                <span>{shop.distance?.toFixed(1)} km away</span>
-                                            </div>
-
-                                            {shop.rating && shop.rating > 0 ? (
-                                                <div className="flex items-center text-sm text-gray-600">
-                                                    <span className="mr-2">⭐</span>
-                                                    <span>{shop.rating.toFixed(1)} ({shop.review_count} reviews)</span>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center text-sm text-gray-500">
-                                                    <span className="mr-2">⭐</span>
-                                                    <span>No reviews yet</span>
-                                                </div>
-                                            )}
-
-                                            <div className="flex items-center text-sm text-gray-600">
-                                                <span className="mr-2">📍</span>
-                                                <span className="truncate">{shop.address}</span>
-                                            </div>
-
-                                            <div className="flex items-center text-sm text-emerald-600 font-medium">
-                                                <span className="mr-2">🚚</span>
-                                                <span>Delivers within {shop.delivery_range_km ?? 5} km</span>
-                                            </div>
-                                        </div>
-                                    </CardHeader>
-
-                                    <CardContent>
-                                        <Button variant="primary" className="w-full">
-                                            Browse Products →
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                            </Link>
+                            <ShopCard key={shop.id} shop={shop} />
                         ))}
                     </div>
                 )}
 
-                {/* Quick Actions */}
-                <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {user ? (
-                        <Link href="/consumer/orders">
-                            <Card hoverable className="h-full">
-                                <CardContent className="pt-6 text-center">
-                                    <div className="text-5xl mb-3">📦</div>
-                                    <h3 className="font-semibold text-gray-900">My Orders</h3>
-                                    <p className="text-sm text-gray-600 mt-1">View order history</p>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                    ) : (
-
-                        <div className="h-full flex flex-col gap-2">
-                            <div onClick={() => setShowTrackModal(true)} className="cursor-pointer flex-1">
-                                <Card hoverable className="h-full bg-blue-50 border-blue-200">
-                                    <CardContent className="pt-6 text-center">
-                                        <div className="text-5xl mb-3">🔍</div>
-                                        <h3 className="font-semibold text-gray-900">Track Order</h3>
-                                        <p className="text-sm text-gray-600 mt-1">Enter Order ID to track status</p>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                            {lastOrderId && (
-                                <Link href={`/consumer/orders?orderId=${lastOrderId}`}>
-                                    <Button variant="outline" className="w-full text-sm">
-                                        ↺ View Last Order
-                                    </Button>
+                {/* Footer Quick Actions */}
+                <div className="mt-20 border-t border-gray-200 pt-10">
+                    <h2 className="text-xl font-bold text-gray-800 mb-6 px-1">Quick Actions</h2>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {user ? (
+                            <>
+                                <Link href="/consumer/orders" className="block">
+                                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-emerald-200 hover:shadow-md transition-all text-center group">
+                                        <div className="text-3xl mb-2 group-hover:scale-110 transition-transform duration-200">📦</div>
+                                        <span className="font-medium text-gray-700 group-hover:text-emerald-700">Orders</span>
+                                    </div>
                                 </Link>
-                            )}
-                        </div>
-                    )
-                    }
-
-                    <Link href="/consumer/cart">
-                        <Card hoverable className="h-full">
-                            <CardContent className="pt-6 text-center">
-                                <div className="text-5xl mb-3">🛒</div>
-                                <h3 className="font-semibold text-gray-900">Shopping Cart</h3>
-                                <p className="text-sm text-gray-600 mt-1">View your cart</p>
-                            </CardContent>
-                        </Card>
-                    </Link>
-
-                    {
-                        user ? (
-                            <Link href="/consumer/profile">
-                                <Card hoverable className="h-full">
-                                    <CardContent className="pt-6 text-center">
-                                        <div className="text-5xl mb-3">👤</div>
-                                        <h3 className="font-semibold text-gray-900">Profile</h3>
-                                        <p className="text-sm text-gray-600 mt-1">Manage your account</p>
-                                    </CardContent>
-                                </Card>
-                            </Link>
+                                <Link href="/consumer/profile" className="block">
+                                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-emerald-200 hover:shadow-md transition-all text-center group">
+                                        <div className="text-3xl mb-2 group-hover:scale-110 transition-transform duration-200">👤</div>
+                                        <span className="font-medium text-gray-700 group-hover:text-emerald-700">Profile</span>
+                                    </div>
+                                </Link>
+                            </>
                         ) : (
-                            <Link href="/auth/login">
-                                <Card hoverable className="h-full border-emerald-200 bg-emerald-50">
-                                    <CardContent className="pt-6 text-center">
-                                        <div className="text-5xl mb-3">🔑</div>
-                                        <h3 className="font-semibold text-gray-900">Login / Register</h3>
-                                        <p className="text-sm text-gray-600 mt-1">Create an account</p>
-                                    </CardContent>
-                                </Card>
-                            </Link>
-                        )
-                    }
-                </div >
-            </main >
+                            <>
+                                <div onClick={() => setShowTrackModal(true)} className="bg-white p-4 rounded-xl shadow-sm border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all text-center cursor-pointer group">
+                                    <div className="text-3xl mb-2 group-hover:scale-110 transition-transform duration-200">🔍</div>
+                                    <span className="font-medium text-gray-700 group-hover:text-blue-600">Track Order</span>
+                                </div>
+                                <Link href="/auth/login" className="block">
+                                    <div className="bg-white p-4 rounded-xl shadow-sm border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all text-center group">
+                                        <div className="text-3xl mb-2 group-hover:scale-110 transition-transform duration-200">🔑</div>
+                                        <span className="font-medium text-gray-700 group-hover:text-emerald-600">Login</span>
+                                    </div>
+                                </Link>
+                            </>
+                        )}
+                        <Link href="/consumer/cart" className="block">
+                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-emerald-200 hover:shadow-md transition-all text-center group">
+                                <div className="text-3xl mb-2 group-hover:scale-110 transition-transform duration-200">🛒</div>
+                                <span className="font-medium text-gray-700 group-hover:text-emerald-700">Cart</span>
+                            </div>
+                        </Link>
+                    </div>
+                </div>
+            </main>
 
             {/* Track Order Modal */}
             {
                 showTrackModal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <Card className="max-w-md w-full">
-                            <CardHeader>
-                                <CardTitle>Track Guest Order</CardTitle>
-                                <CardDescription>Enter the Order ID you received at checkout</CardDescription>
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+                        <Card className="max-w-md w-full shadow-2xl border-0">
+                            <CardHeader className="bg-gray-50 border-b border-gray-100 pb-4">
+                                <CardTitle className="text-xl">Track Guest Order</CardTitle>
+                                <CardDescription>Enter the Order ID you received at check out.</CardDescription>
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="pt-6">
                                 <div className="space-y-4">
                                     <Input
                                         label="Order ID"
                                         placeholder="e.g. 123e4567-e89b..."
                                         value={trackOrderId}
                                         onChange={(e) => setTrackOrderId(e.target.value)}
+                                        className="text-lg font-mono placeholder:font-sans"
                                     />
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-3 pt-2">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setShowTrackModal(false)}
+                                            className="flex-1"
+                                        >
+                                            Cancel
+                                        </Button>
                                         <Button
                                             variant="primary"
                                             className="flex-1"
                                             onClick={handleTrackOrder}
                                             disabled={!trackOrderId.trim()}
                                         >
-                                            Track Status
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => setShowTrackModal(false)}
-                                        >
-                                            Cancel
+                                            Track Order
                                         </Button>
                                     </div>
+                                    {lastOrderId && (
+                                        <div className="mt-4 pt-4 border-t border-gray-100 text-center">
+                                            <p className="text-xs text-gray-500 mb-2">Recent Order</p>
+                                            <Link href={`/consumer/orders?orderId=${lastOrderId}`}>
+                                                <span className="text-emerald-600 hover:underline text-sm font-medium">
+                                                    View {lastOrderId.slice(0, 8)}...
+                                                </span>
+                                            </Link>
+                                        </div>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
                     </div>
                 )
             }
-        </div >
+        </div>
     )
 }

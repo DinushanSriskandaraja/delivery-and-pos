@@ -46,6 +46,12 @@ export default function CartPage() {
         loadData()
     }, [])
 
+    useEffect(() => {
+        if (shop?.delivery_range_km === 0) {
+            setOrderType('pickup')
+        }
+    }, [shop])
+
     const loadData = async () => {
         try {
             const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -254,7 +260,7 @@ export default function CartPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-emerald-50">
             <Header user={user} />
 
             <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -333,21 +339,23 @@ export default function CartPage() {
                                             Order Type
                                         </label>
                                         <div className="space-y-2">
-                                            <button
-                                                onClick={() => setOrderType('delivery')}
-                                                className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-colors ${orderType === 'delivery'
-                                                    ? 'border-emerald-500 bg-emerald-50'
-                                                    : 'border-gray-200 hover:border-gray-300'
-                                                    }`}
-                                            >
-                                                <div className="flex items-center">
-                                                    <span className="text-2xl mr-3">🚚</span>
-                                                    <div>
-                                                        <p className="font-medium">Home Delivery</p>
-                                                        <p className="text-xs text-gray-600">Get it delivered to your door</p>
+                                            {shop?.delivery_range_km !== 0 && (
+                                                <button
+                                                    onClick={() => setOrderType('delivery')}
+                                                    className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-colors ${orderType === 'delivery'
+                                                        ? 'border-emerald-500 bg-emerald-50'
+                                                        : 'border-gray-200 hover:border-gray-300'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center">
+                                                        <span className="text-2xl mr-3">🚚</span>
+                                                        <div>
+                                                            <p className="font-medium">Home Delivery</p>
+                                                            <p className="text-xs text-gray-600">Get it delivered to your door</p>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </button>
+                                                </button>
+                                            )}
 
                                             <button
                                                 onClick={() => setOrderType('pickup')}

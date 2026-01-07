@@ -49,7 +49,7 @@ export async function updateSession(request: NextRequest) {
     // Special handling for consumer routes
     if (pathname.startsWith('/consumer')) {
         // Protect strict user routes
-        if (pathname.startsWith('/consumer/profile')) {
+        if (pathname.startsWith('/consumer/profile') || pathname.startsWith('/consumer/checkout')) {
             if (!user) {
                 const url = request.nextUrl.clone()
                 url.pathname = '/auth/login'
@@ -69,6 +69,7 @@ export async function updateSession(request: NextRequest) {
                 return NextResponse.redirect(url)
             }
         }
+        // Allow access to other consumer routes (dashboard, shop details, etc.)
         return supabaseResponse
     }
 

@@ -1,8 +1,113 @@
-import Link from "next/link";
-import Button from "@/components/ui/Button";
-import Card, { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
+'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
+import Button from '@/components/ui/Button'
+import Card, { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import { calculateDistance } from '@/lib/utils'
+import ShopCard, { Shop } from '@/components/shops/ShopCard'
+
+
 
 export default function Home() {
+  const supabase = createClient()
+  const [nearbyShops, setNearbyShops] = useState<Shop[]>([])
+  const [isLoadingShops, setIsLoadingShops] = useState(true)
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+
+  useEffect(() => {
+    getUserLocation()
+  }, [])
+
+  useEffect(() => {
+    if (userLocation) {
+      loadNearbyShops()
+    } else {
+      setIsLoadingShops(false)
+    }
+  }, [userLocation])
+
+  const getUserLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          })
+        },
+        (error) => {
+          console.error('Error getting location:', error)
+          setIsLoadingShops(false)
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      )
+    } else {
+      setIsLoadingShops(false)
+    }
+  }
+
+  const loadNearbyShops = async () => {
+    try {
+      const { data: shopsData } = await supabase
+        .from('shops')
+        .select('*')
+        .eq('is_active', true)
+        .eq('is_approved', true)
+
+      if (shopsData && userLocation) {
+        // Load ratings for each shop
+        const shopsWithRatings = await Promise.all(
+          shopsData.map(async (shop) => {
+            const { data: reviews } = await supabase
+              .from('shop_reviews')
+              .select('rating')
+              .eq('shop_id', shop.id)
+
+            const rating = reviews && reviews.length > 0
+              ? reviews.reduce((sum, r) => sum + Number(r.rating), 0) / reviews.length
+              : 0
+
+            return {
+              ...shop,
+              rating: Math.round(rating * 10) / 10,
+              review_count: reviews?.length || 0
+            }
+          })
+        )
+
+        // Calculate distances and filter
+        const withDistance = shopsWithRatings.map(shop => ({
+          ...shop,
+          distance: calculateDistance(
+            userLocation.lat,
+            userLocation.lng,
+            Number(shop.latitude),
+            Number(shop.longitude)
+          )
+        }))
+
+        // Filter shops within typical range (e.g. 20km) and sort by distance
+        const nearby = withDistance
+          .filter(shop => (shop.distance || 0) <= 20)
+          .sort((a, b) => (a.distance || 0) - (b.distance || 0))
+          .slice(0, 3)
+
+        setNearbyShops(nearby)
+      }
+    } catch (error) {
+      console.error('Error loading nearby shops:', error)
+    } finally {
+      setIsLoadingShops(false)
+    }
+  }
+
   const features = [
     {
       title: "For Consumers",
@@ -58,9 +163,9 @@ export default function Home() {
               A unified, location-based grocery marketplace and POS platform connecting consumers, shop owners, and delivery partners
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/auth/register">
+              <Link href="/consumer">
                 <Button variant="primary" size="lg">
-                  Get Started
+                  Start Shopping
                 </Button>
               </Link>
               <Link href="/auth/login">
@@ -72,6 +177,42 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Nearby Shops Section */}
+      {(userLocation || isLoadingShops) && (
+        <section className="py-12 bg-white/50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900">Shops Near You</h2>
+                <p className="text-gray-600 mt-1">Found based on your location</p>
+              </div>
+              <Link href="/consumer">
+                <Button variant="outline">View All Shops →</Button>
+              </Link>
+            </div>
+
+            {isLoadingShops ? (
+              <div className="flex justify-center py-12">
+                <LoadingSpinner size="lg" />
+              </div>
+            ) : nearbyShops.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {nearbyShops.map((shop) => (
+                  <ShopCard key={shop.id} shop={shop} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <p className="text-gray-600 mb-4">No shops found nearby. Try expanding your search in the full view.</p>
+                <Link href="/consumer">
+                  <Button variant="primary">Browse All Shops</Button>
+                </Link>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Features Section */}
       <section className="py-20 bg-white">

@@ -212,75 +212,95 @@ export default function ShopDetailPage() {
         <div className="min-h-screen bg-gray-50">
             <Header user={user} />
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Shop Header */}
-                <Card className="mb-6">
-                    <CardHeader>
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <CardTitle className="text-2xl">{shop?.name}</CardTitle>
-                                <CardDescription className="mt-2">{shop?.description}</CardDescription>
-                                <div className="mt-4 flex items-center gap-4">
-                                    {shop?.rating > 0 ? (
-                                        <div className="flex items-center text-sm text-gray-600">
-                                            <span className="mr-1">⭐</span>
-                                            <span>{shop.rating.toFixed(1)} ({shop.review_count} reviews)</span>
-                                        </div>
-                                    ) : (
-                                        <span className="text-sm text-gray-500">No reviews yet</span>
-                                    )}
-                                    <div className="text-sm text-gray-600">
-                                        📍 {shop?.address}
+            {/* Shop Hero Section */}
+            <div className="bg-emerald-900 text-emerald-50 relative overflow-hidden">
+                <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-emerald-800 rounded-full opacity-50 blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-72 h-72 bg-emerald-950 rounded-full opacity-50 blur-3xl"></div>
+
+                <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                        <div>
+                            <Link href="/consumer" className="inline-flex items-center text-emerald-200 hover:text-white mb-4 transition-colors">
+                                ← Back to Shops
+                            </Link>
+                            <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight mb-2">
+                                {shop?.name}
+                            </h1>
+                            <div className="flex items-center gap-4 text-emerald-100 mb-4">
+                                {shop?.rating > 0 ? (
+                                    <div className="flex items-center text-sm font-medium bg-emerald-800/50 px-3 py-1 rounded-full backdrop-blur-sm border border-emerald-700">
+                                        <span className="mr-1 text-yellow-400">★</span>
+                                        <span>{shop.rating.toFixed(1)} ({shop.review_count} reviews)</span>
                                     </div>
+                                ) : (
+                                    <span className="text-sm bg-emerald-800/50 px-3 py-1 rounded-full border border-emerald-700">New Shop</span>
+                                )}
+                                <div className="text-sm font-medium flex items-center">
+                                    <span className="mr-1">📍</span> {shop?.address}
                                 </div>
                             </div>
-                            <Link href="/consumer">
-                                <Button variant="outline">← Back to Shops</Button>
-                            </Link>
+                            <p className="text-lg text-emerald-100/90 max-w-2xl leading-relaxed">
+                                {shop?.description}
+                            </p>
                         </div>
-                    </CardHeader>
-                </Card>
 
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                        {/* Cart Summary Card (Desktop) */}
+
+                    </div>
+                </div>
+            </div>
+
+            <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 -mt-6 relative z-20">
+                <div className={`grid grid-cols-1 gap-8 ${cart.length > 0 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
                     {/* Filters Sidebar */}
-                    <div className="lg:col-span-1">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Filters</CardTitle>
+                    <div className="lg:col-span-1 space-y-6">
+
+                        <Card className="shadow-lg border-0 ring-1 ring-black/5">
+                            <CardHeader className="pb-3 border-b border-gray-100">
+                                <CardTitle className="text-lg">Filters</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    <Input
-                                        label="Search Products"
-                                        placeholder="Search..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                    />
+                            <CardContent className="pt-4">
+                                <div className="space-y-5">
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span className="text-gray-400">🔍</span>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            placeholder="Search items..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent sm:text-sm"
+                                        />
+                                    </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Category
+                                        <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                                            Categories
                                         </label>
-                                        <div className="space-y-2">
+                                        <div className="space-y-1">
+
                                             <button
                                                 onClick={() => setSelectedCategory('all')}
-                                                className={`w-full text-left px-3 py-2 rounded-lg text-sm ${selectedCategory === 'all'
-                                                    ? 'bg-emerald-100 text-emerald-700 font-medium'
-                                                    : 'hover:bg-gray-100'
+                                                className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-between group ${selectedCategory === 'all'
+                                                    ? 'bg-emerald-50 text-emerald-700 shadow-sm'
+                                                    : 'text-gray-600 hover:bg-gray-50'
                                                     }`}
                                             >
-                                                All Products
+                                                <span>All Products</span>
+                                                {selectedCategory === 'all' && <span className="text-emerald-500">●</span>}
                                             </button>
                                             {categories.map(category => (
                                                 <button
                                                     key={category}
                                                     onClick={() => setSelectedCategory(category)}
-                                                    className={`w-full text-left px-3 py-2 rounded-lg text-sm ${selectedCategory === category
-                                                        ? 'bg-emerald-100 text-emerald-700 font-medium'
-                                                        : 'hover:bg-gray-100'
+                                                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-between group ${selectedCategory === category
+                                                        ? 'bg-emerald-50 text-emerald-700 shadow-sm'
+                                                        : 'text-gray-600 hover:bg-gray-50'
                                                         }`}
                                                 >
-                                                    {category}
+                                                    <span>{category}</span>
+                                                    {selectedCategory === category && <span className="text-emerald-500">●</span>}
                                                 </button>
                                             ))}
                                         </div>
@@ -289,25 +309,18 @@ export default function ShopDetailPage() {
                             </CardContent>
                         </Card>
 
-                        {/* Cart Summary */}
+                        {/* Mobile Cart Summary */}
                         {cart.length > 0 && (
-                            <Card className="mt-4">
-                                <CardHeader>
-                                    <CardTitle>Cart Summary</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-gray-600">Items:</span>
-                                            <span className="font-medium">{getCartItemCount()}</span>
-                                        </div>
-                                        <div className="flex justify-between text-lg font-semibold">
-                                            <span>Total:</span>
-                                            <span className="text-emerald-600">{formatPrice(getCartTotal())}</span>
+                            <Card className="lg:hidden shadow-lg border border-emerald-100 bg-emerald-50/50">
+                                <CardContent className="p-4">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <div>
+                                            <p className="text-sm text-gray-500">{getCartItemCount()} items</p>
+                                            <p className="text-lg font-bold text-emerald-700">{formatPrice(getCartTotal())}</p>
                                         </div>
                                         <Link href="/consumer/cart">
-                                            <Button variant="primary" className="w-full mt-4">
-                                                View Cart & Checkout
+                                            <Button variant="primary">
+                                                Checkout
                                             </Button>
                                         </Link>
                                     </div>
@@ -318,83 +331,102 @@ export default function ShopDetailPage() {
 
                     {/* Products Grid */}
                     <div className="lg:col-span-3">
-                        <div className="mb-4">
-                            <h2 className="text-xl font-semibold text-gray-900">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h2 className="text-xl font-bold text-gray-800">
                                 {filteredProducts.length} Product{filteredProducts.length !== 1 ? 's' : ''}
                             </h2>
+                            {selectedCategory !== 'all' && (
+                                <span className="text-sm text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full font-medium">
+                                    {selectedCategory}
+                                </span>
+                            )}
                         </div>
 
                         {filteredProducts.length === 0 ? (
-                            <Card>
-                                <CardContent className="py-12 text-center">
-                                    <div className="text-6xl mb-4">📦</div>
-                                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No products found</h3>
-                                    <p className="text-gray-600">Try adjusting your filters</p>
-                                </CardContent>
-                            </Card>
+                            <div className="text-center py-16 bg-white rounded-xl border border-gray-100">
+                                <div className="text-6xl mb-4 opacity-50">📦</div>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">No products found</h3>
+                                <p className="text-gray-600">Try searching for something else or change categories.</p>
+                            </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                 {filteredProducts.map((product) => {
                                     const cartItem = cart.find(item => item.shop_product_id === product.id)
                                     const inCart = !!cartItem
 
                                     return (
-                                        <Card key={product.id}>
-                                            <CardHeader>
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex-1">
-                                                        <CardTitle className="text-base">{product.global_product.name}</CardTitle>
-                                                        <CardDescription className="mt-1 text-xs">
-                                                            {product.global_product.description}
-                                                        </CardDescription>
+                                        <Card key={product.id} hoverable className="h-full flex flex-col border-0 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-visible">
+                                            {/* Product Image area */}
+                                            <div className="relative h-48 w-full bg-gray-100 rounded-t-xl overflow-hidden group">
+                                                {product.global_product.image_url ? (
+                                                    <img
+                                                        src={product.global_product.image_url}
+                                                        alt={product.global_product.name}
+                                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center">
+                                                        <span className="text-4xl">🥬</span>
                                                     </div>
-                                                </div>
+                                                )}
 
-                                                <div className="mt-3 flex items-center justify-between">
-                                                    <div>
-                                                        <p className="text-2xl font-bold text-emerald-600">
-                                                            {formatPrice(product.price)}
-                                                        </p>
-                                                        <p className="text-xs text-gray-500">per {product.global_product.base_unit}</p>
-                                                    </div>
-                                                    <Badge variant={product.stock_quantity > 10 ? 'success' : 'warning'}>
-                                                        {product.stock_quantity} in stock
+                                                {/* Floating Badges */}
+                                                <div className="absolute top-3 left-3 flex flex-col gap-2">
+                                                    <Badge variant="default" className="bg-white/90 backdrop-blur-sm shadow-sm text-gray-700 font-medium">
+                                                        {product.global_product.category}
                                                     </Badge>
                                                 </div>
+                                                <div className="absolute top-3 right-3">
+                                                    <Badge variant={product.stock_quantity > 10 ? 'success' : 'warning'} className="shadow-sm">
+                                                        {product.stock_quantity > 0 ? 'In Stock' : 'Out of Stock'}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+
+                                            <CardHeader className="pb-0 pt-4">
+                                                <CardTitle className="text-lg text-gray-900 line-clamp-1">{product.global_product.name}</CardTitle>
+                                                <CardDescription className="mt-1 text-sm line-clamp-2 min-h-[2.5em] text-gray-500">
+                                                    {product.global_product.description}
+                                                </CardDescription>
                                             </CardHeader>
 
-                                            <CardContent>
+                                            <CardContent className="flex-grow flex flex-col justify-end pt-4">
+                                                <div className="mb-4">
+                                                    <div className="flex items-baseline gap-1">
+                                                        <span className="text-2xl font-bold text-emerald-700">
+                                                            {formatPrice(product.price)}
+                                                        </span>
+                                                        <span className="text-sm text-gray-400 font-medium">
+                                                            / {product.global_product.base_unit}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
                                                 {inCart ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
+                                                    <div className="flex items-center justify-between bg-emerald-50 rounded-xl p-1.5 border border-emerald-100 shadow-inner">
+                                                        <button
                                                             onClick={() => updateQuantity(product.id, cartItem.quantity - 1)}
+                                                            className="w-9 h-9 flex items-center justify-center rounded-lg bg-white shadow-sm hover:shadow-md text-emerald-700 transition-all font-bold"
                                                         >
                                                             −
-                                                        </Button>
-                                                        <span className="flex-1 text-center font-medium">{cartItem.quantity}</span>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
+                                                        </button>
+                                                        <span className="font-bold text-emerald-900 w-8 text-center text-lg">
+                                                            {cartItem.quantity}
+                                                        </span>
+                                                        <button
                                                             onClick={() => updateQuantity(product.id, cartItem.quantity + 1)}
+                                                            className="w-9 h-9 flex items-center justify-center rounded-lg bg-emerald-600 shadow-sm hover:bg-emerald-700 text-white transition-all font-bold"
                                                             disabled={cartItem.quantity >= product.stock_quantity}
                                                         >
                                                             +
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="danger"
-                                                            onClick={() => removeFromCart(product.id)}
-                                                        >
-                                                            Remove
-                                                        </Button>
+                                                        </button>
                                                     </div>
                                                 ) : (
                                                     <Button
                                                         variant="primary"
-                                                        className="w-full"
+                                                        className="w-full shadow-lg shadow-emerald-100 py-6 text-base font-semibold rounded-xl hover:translate-y-0.5 active:translate-y-1"
                                                         onClick={() => addToCart(product)}
+                                                        disabled={product.stock_quantity <= 0}
                                                     >
                                                         Add to Cart
                                                     </Button>
@@ -406,6 +438,57 @@ export default function ShopDetailPage() {
                             </div>
                         )}
                     </div>
+
+                    {/* Right Sidebar - Cart (Desktop) */}
+                    {cart.length > 0 && (
+                        <div className="hidden lg:block lg:col-span-1 space-y-6">
+                            <Card className="shadow-lg border-0 ring-1 ring-black/5 sticky top-24">
+                                <CardHeader className="pb-3 border-b border-gray-100">
+                                    <CardTitle className="text-lg flex items-center gap-2">
+                                        🛒 Your Cart
+                                        <span className="text-sm font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full ml-auto">
+                                            {getCartItemCount()} items
+                                        </span>
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="pt-4">
+                                    <div className="space-y-4">
+                                        <div className="max-h-[calc(100vh-300px)] overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-gray-200">
+                                            {cart.map((item) => (
+                                                <div key={item.shop_product_id} className="flex justify-between items-start text-sm pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                                                    <div className="flex-1 pr-3">
+                                                        <div className="font-medium text-gray-900 line-clamp-2">
+                                                            {item.product.global_product.name}
+                                                        </div>
+                                                        <div className="text-gray-500 text-xs mt-1">
+                                                            {item.quantity} × {formatPrice(item.product.price)}
+                                                        </div>
+                                                    </div>
+                                                    <div className="font-semibold text-gray-900">
+                                                        {formatPrice(item.product.price * item.quantity)}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="pt-4 border-t border-gray-100">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <span className="text-gray-600 font-medium">Total</span>
+                                                <span className="text-xl font-bold text-emerald-700">
+                                                    {formatPrice(getCartTotal())}
+                                                </span>
+                                            </div>
+                                            <Link href="/consumer/cart">
+                                                <Button className="w-full font-bold shadow-md hover:shadow-lg transition-all">
+                                                    Checkout →
+                                                </Button>
+                                            </Link>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
                 </div>
             </main>
         </div>
